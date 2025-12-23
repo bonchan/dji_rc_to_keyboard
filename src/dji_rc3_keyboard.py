@@ -8,7 +8,7 @@ from DJIFPVRemoteController3 import DJIFPVRemoteController3
 EMULATE_HARDWARE = True
 POLLING_RATE = 0.01  # 100Hz for high responsiveness
 
-PRINT_PRESS_RELEASE = True
+PRINT_PRESS_RELEASE = False
 
 keyboard = Controller()
 
@@ -20,16 +20,20 @@ active_keys = {
     Key.up: False, Key.down: False
 }
 
-def printpr(value):
+def press(key):
     if PRINT_PRESS_RELEASE:
-        print(value)
-
-def handle_press_release(key, delay=0.08):
-    printpr(f'press: {key}')
+        print(f'press: {key}')
     keyboard.press(key)
-    sleep(delay)
-    printpr(f'release: {key}')
+
+def release(key):
+    if PRINT_PRESS_RELEASE:
+        print(f'release: {key}')
     keyboard.release(key)
+
+def tap(key, delay=0.08):
+    press(key)
+    sleep(delay)
+    release(key)
 
 def set_key_state(key, should_be_pressed):
     """
@@ -41,12 +45,10 @@ def set_key_state(key, should_be_pressed):
     is_currently_pressed = active_keys.get(key, False)
 
     if should_be_pressed and not is_currently_pressed:
-        printpr(f'press: {key}')
-        keyboard.press(key)
+        press(key)
         active_keys[key] = True
     elif not should_be_pressed and is_currently_pressed:
-        printpr(f'release: {key}')
-        keyboard.release(key)
+        release(key)
         active_keys[key] = False
 
 def handle_flight_axis(axis_value, key_pos, key_neg):
@@ -70,15 +72,15 @@ def handle_flight_axis(axis_value, key_pos, key_neg):
 def main():
     pygame.init()
     
-    # --- 15-SECOND CONNECTION RETRY ---
+    # --- 30-SECOND CONNECTION RETRY ---
     connected = False
-    for attempt in range(1, 16):
+    for attempt in range(1, 31):
         pygame.joystick.quit()
         pygame.joystick.init()
         if pygame.joystick.get_count() > 0:
             connected = True
             break
-        sys.stdout.write(f"\r[WAITING] No controller. Attempt {attempt}/15... ")
+        sys.stdout.write(f"\r[WAITING] No controller. Attempt {attempt}/30... ")
         sys.stdout.flush()
         sleep(1)
 
@@ -104,15 +106,15 @@ def main():
             if controller.mode != last_mode:
                 target = {1: '1', 0: '2', -1: '3'}.get(controller.mode)
                 if target:
-                    handle_press_release(target)
+                    tap(target)
                 last_mode = controller.mode
 
             if controller.trigger and not last_trigger:
-                handle_press_release('f')
+                tap('f')
             last_trigger = controller.trigger
 
             if controller.c1 and not last_c1:
-                handle_press_release('t')
+                tap('t')
             last_c1 = controller.c1
 
             # Flight Axes (Immediate State Tracking)
@@ -129,8 +131,7 @@ def main():
     finally:
         # Emergency Cleanup
         for k in active_keys.keys():
-            printpr(f'release: {k}')
-            keyboard.release(k)
+            release(k)
         pygame.quit()
 
 if __name__ == "__main__":
