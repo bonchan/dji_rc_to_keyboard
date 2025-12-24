@@ -1,4 +1,4 @@
-# dji_rc3_to_keyboard
+# dji_rc_to_keyboard
 
 
 
