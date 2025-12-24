@@ -3,8 +3,8 @@ import struct
 from .base_rc import BaseRemoteController
 
 class DJIRCN1(BaseRemoteController):
-    def __init__(self, port="COM4", baudrate=115200, deadzone_threshold=0.1):
-        super().__init__(deadzone_threshold=deadzone_threshold)
+    def __init__(self, port="COM4", baudrate=115200, deadzone_threshold_movement=0.1, deadzone_threshold_elevation=0.1):
+        super().__init__(deadzone_threshold_movement=deadzone_threshold_movement, deadzone_threshold_elevation=deadzone_threshold_elevation)
         
         try:
             self.ser = serial.Serial(port, baudrate, timeout=0.1)
@@ -48,11 +48,11 @@ class DJIRCN1(BaseRemoteController):
 
                 if len(full_packet) == 38:
                     # Map the indices identified in your testing
-                    self.roll     = self._get_axis_value(full_packet, 13)
-                    self.pitch    = self._get_axis_value(full_packet, 16)
-                    self.throttle = self._get_axis_value(full_packet, 19)
-                    self.yaw      = self._get_axis_value(full_packet, 22)
-                    self.tilt     = self._get_axis_value(full_packet, 25) # Wheel mapped to tilt
+                    self.roll     = self.dead_zone_movement(self._get_axis_value(full_packet, 13))
+                    self.pitch    = self.dead_zone_movement(self._get_axis_value(full_packet, 16))
+                    self.throttle = self.dead_zone_elevation(self._get_axis_value(full_packet, 19))
+                    self.yaw      = self.dead_zone_movement(self._get_axis_value(full_packet, 22))
+                    self.tilt     = self.dead_zone_movement(self._get_axis_value(full_packet, 25)) # Wheel mapped to tilt
 
                     # Buttons and Switches currently return False/0 
                     # as N1 doesn't stream them in this packet.
