@@ -54,6 +54,7 @@ def main(model_choice):
 
     # Values to store when hold is activated
     frozen_pitch = 0.0
+    frozen_roll = 0.0
     frozen_yaw = 0.0
 
     # 3. Universal loop
@@ -100,9 +101,19 @@ def main(model_choice):
                             hold_turn = True
 
                 if rc.button1.is_maintained_long_press and rc.button4.is_short_tap:
-                    print('>>> ENABLE CRUISE <<<')
+                    print('>>> ENABLE FORWARD CRUISE <<<')
                     hold_cruise = True
                     frozen_pitch = 1
+                    frozen_roll = 0
+
+                if rc.button4.is_long_press:
+                    if rc.pitch != 0 or rc.roll != 0:
+                        print('>>> ENABLE FREE CRUISE <<<')
+                        hold_cruise = True
+                        frozen_pitch = rc.pitch
+                        frozen_roll = rc.roll
+                    else:
+                        print('>>> FREE CRUISE HAS NO VALUES TO CRUISE<<<')
 
             
 
@@ -110,11 +121,11 @@ def main(model_choice):
             # If Cruise is on, use the frozen pitch, otherwise use real-time stick
             pitch_val = frozen_pitch if hold_cruise else overrides.get(KbAxis.PITCH, rc.pitch)
             
+            # Roll remains real-time unless you want to lock that too
+            roll_val = frozen_roll if hold_cruise else overrides.get(KbAxis.ROLL, rc.roll)
+            
             # If Hold Turn is on, use the frozen yaw, otherwise use real-time stick
             yaw_val = frozen_yaw if hold_turn else overrides.get(KbAxis.YAW, rc.yaw)
-            
-            # Roll remains real-time unless you want to lock that too
-            roll_val = overrides.get(KbAxis.ROLL, rc.roll)
 
             # --- 2. Handle Mode Switch (Camera modes) ---
             if rc.sw1 != last_camera:
