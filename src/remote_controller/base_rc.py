@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from src.utils.logger_setup import setup_logger
 from src.utils.input_logic import ButtonHandler
 
 class BaseRemoteController(ABC):
@@ -7,7 +8,7 @@ class BaseRemoteController(ABC):
     All values are normalized to a float range of -1.0 to 1.0.
     """
     def __init__(self, buttons, deadzone_threshold_movement, deadzone_threshold_elevation):
-
+        self.logger = setup_logger(self)
         self.deadzone_threshold_movement = deadzone_threshold_movement
         self.deadzone_threshold_elevation = deadzone_threshold_elevation
 

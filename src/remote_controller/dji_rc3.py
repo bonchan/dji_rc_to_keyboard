@@ -1,3 +1,10 @@
+import os
+import warnings
+# 1. Suppress the "Hello from the pygame community" message
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+# 2. Suppress the pkg_resources deprecation warning
+warnings.filterwarnings("ignore", category=UserWarning, module='pygame.pkgdata')
+
 import pygame
 from .base_rc import BaseRemoteController, RCConnectionError
 
@@ -28,7 +35,7 @@ class DJIRC3(BaseRemoteController):
         try:
             self.js = pygame.joystick.Joystick(joystick_index)
             self.js.init()
-            print(f"Connected to: {self.js.get_name()}")
+            self.logger.info(f"Connected to: {self.js.get_name()}")
         except pygame.error as e:
             # Re-raise as a generic exception so your main loop catches it
             raise RCConnectionError(f"DJI RC3 not found at index {joystick_index}: {e}")
@@ -62,7 +69,7 @@ class DJIRC3(BaseRemoteController):
             return True
 
         except pygame.error:
-            print('pygame.error')
+            self.logger.info('pygame.error')
             return False
         
     @property

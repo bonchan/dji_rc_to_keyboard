@@ -1,3 +1,4 @@
+from src.utils.logger_setup import setup_logger
 import time
 import argparse
 import serial.tools.list_ports
@@ -12,7 +13,8 @@ from src.keyboard.keyboard import KeyboardEmulator, KbAxis, KbButton
 
 
 def main(model_choice):
-    print(f"--- DJI Universal Interface | Target: {model_choice} ---")
+    logger = setup_logger(None, 'Main')
+    logger.info(f"--- DJI Universal Interface | Target: {model_choice} ---")
 
     rc = None
     retry_limit = 15
@@ -27,12 +29,12 @@ def main(model_choice):
                 rc = DJIRCN1()
             
             # If we reach this line, constructor succeeded
-            print(f"Successfully connected to {model_choice}!")
+            logger.info(f"Successfully connected to {model_choice}!")
             break 
             
         except RCConnectionError as e:
             rc = None
-            print(f"Retrying... [{retry}/{retry_limit}] {e}")
+            logger.info(f"Retrying... [{retry}/{retry_limit}] {e}")
             time.sleep(1)
 
     k_emu = KeyboardEmulator(emulate_hardware=True, print_events=True)
@@ -59,22 +61,22 @@ def main(model_choice):
 
     # 3. Universal loop
     try:
-        print("Streaming data. Press Ctrl+C to stop.")
+        logger.info("Streaming data. Press Ctrl+C to stop.")
         while True:
             if not rc.is_connected:
-                print("[!!!] CONTROLLER DISCONNECTED [!!!]")
+                logger.info("[!!!] CONTROLLER DISCONNECTED [!!!]")
                 break
 
             if not rc.update(): continue
 
             if rc.button1.is_short_tap:
-                print('>>> Emergency PAUSE for 3 sec <<<')
+                logger.info('>>> Emergency PAUSE for 3 sec <<<')
                 seq_handler.stop()
                 k_emu.force_cleanup()
                 hold_cruise = False
                 hold_turn = False
                 time.sleep(3)
-                print('>>> Emergency PAUSE Finished <<<')
+                logger.info('>>> Emergency PAUSE Finished <<<')
                 continue
 
             if rc.button3.is_long_press and not (hold_cruise or hold_turn):
@@ -89,31 +91,31 @@ def main(model_choice):
                 # --- enable cruise ---
                 if rc.button4.is_short_tap:
                     if hold_cruise:
-                        print('>>> DISABLE CRUISE <<<')
+                        logger.info('>>> DISABLE CRUISE <<<')
                         hold_cruise = False
                     else:
                         if hold_turn:
-                            print('>>> DISABLE TURN <<<')
+                            logger.info('>>> DISABLE TURN <<<')
                             hold_turn = False
                         elif rc.yaw != 0:
-                            print('>>> ENABLE TURN <<<')
+                            logger.info('>>> ENABLE TURN <<<')
                             frozen_yaw = rc.yaw
                             hold_turn = True
 
                 if rc.button1.is_maintained_long_press and rc.button4.is_short_tap:
-                    print('>>> ENABLE FORWARD CRUISE <<<')
+                    logger.info('>>> ENABLE FORWARD CRUISE <<<')
                     hold_cruise = True
                     frozen_pitch = 1
                     frozen_roll = 0
 
                 if rc.button4.is_long_press:
                     if rc.pitch != 0 or rc.roll != 0:
-                        print('>>> ENABLE FREE CRUISE <<<')
+                        logger.info('>>> ENABLE FREE CRUISE <<<')
                         hold_cruise = True
                         frozen_pitch = rc.pitch
                         frozen_roll = rc.roll
                     else:
-                        print('>>> FREE CRUISE HAS NO VALUES TO CRUISE<<<')
+                        logger.info('>>> FREE CRUISE HAS NO VALUES TO CRUISE<<<')
 
             
 
@@ -162,11 +164,11 @@ def main(model_choice):
             time.sleep(0.01) # ~100Hz update rate
 
     except KeyboardInterrupt:
-        print("User interrupted. Closing connection...")
+        logger.info("User interrupted. Closing connection...")
     finally:
         rc.close()
         k_emu.force_cleanup()
-        print("Done.")
+        logger.info("Done.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DJI RC Interface")
