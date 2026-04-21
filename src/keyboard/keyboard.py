@@ -8,6 +8,7 @@ class KbButton(Enum):
     CAMERA_ZOOM   = '2'
     CAMERA_IR     = '3'
     PICTURE       = 'f'
+    # RECORD        = 'r'
     ANNOTATION    = 't'
     PAUSE         = Key.space
 

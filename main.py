@@ -3,8 +3,9 @@ import time
 import argparse
 import serial.tools.list_ports
 from src.remote_controller.dji_rc3 import DJIRC3
-from src.remote_controller.dji_rcN1 import DJIRCN1
 from src.remote_controller.dji_m300 import DJIM300
+from src.remote_controller.dji_rcN1 import DJIRCN1
+from src.remote_controller.dji_rc_plus2 import DJIRCPlus2
 from src.remote_controller.base_rc import RCConnectionError
 
 from src.utils.sequence import SequenceHandler, SequenceStep
@@ -27,6 +28,8 @@ def main(model_choice):
                 rc = DJIM300()
             elif model_choice == 'N1':
                 rc = DJIRCN1()
+            elif model_choice == 'Plus2':
+                rc = DJIRCPlus2()
             
             # If we reach this line, constructor succeeded
             logger.info(f"Successfully connected to {model_choice}!")
@@ -145,6 +148,10 @@ def main(model_choice):
             if rc.button3.is_short_tap:
                 k_emu.tap(KbButton.PICTURE)
 
+            # TODO
+            # if rc.button5.is_short_tap:
+            #     k_emu.tap(KbButton.RECORD)
+
             # --- 4. Handle Keyboard Emulation ---
             # We send the processed pitch_val and yaw_val (either live or frozen)
             k_emu.handle_axis(KbAxis.PITCH, pitch_val)
@@ -178,7 +185,7 @@ if __name__ == "__main__":
         '--model', 
         type=str, 
         default='RC3', 
-        choices=['RC3', 'N1', 'M300'],
+        choices=['RC3', 'N1', 'M300', 'Plus2'],
         help='Remote controller model to use (default: RC3)'
     )
     
