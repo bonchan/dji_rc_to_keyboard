@@ -14,12 +14,14 @@ buttons_config = [
 ]
 
 class DJIRCPlus2(BaseRemoteController):
-    def __init__(self, deadzone_threshold_movement=0.1, deadzone_threshold_elevation=0.1, deadzone_threshold_tilt=0.1):
+    def __init__(self, deadzone_threshold_movement=0.1, deadzone_threshold_elevation=0.1, deadzone_threshold_tilt=0.1, connect_mode="USB", ip=''):
         super().__init__(buttons_config, deadzone_threshold_movement, deadzone_threshold_elevation, deadzone_threshold_tilt)
         
         # ADB is in the platform-tools folder relative to the root
         self.root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         self.adb_path = os.path.join(self.root_dir, "platform-tools", "adb.exe")
+        self.connect_mode = connect_mode
+        self.ip = ip
         
         if not os.path.exists(self.adb_path):
             raise RCConnectionError(f"ADB binary not found at {self.adb_path}")
@@ -36,6 +38,10 @@ class DJIRCPlus2(BaseRemoteController):
         self.raw_touch_x = -1
         self.raw_touch_y = -1
 
+        if self.connect_mode == "WIFI":
+            # Force an ADB connection attempt before starting the thread
+            subprocess.run([self.adb_path, "connect", self.ip], capture_output=True)
+
         # Start background sniffer
         self.thread = threading.Thread(target=self._sniffer_loop, daemon=True)
         self.thread.start()
@@ -49,11 +55,22 @@ class DJIRCPlus2(BaseRemoteController):
 
     def _sniffer_loop(self):
         try:
-            # -l: Labels, -t: Timestamps
-            cmd = [self.adb_path, "shell", "getevent", "-lt"]
+            if self.connect_mode == "WIFI":
+                # Target the specific IP
+                cmd = [self.adb_path, "-s", self.ip, "shell", "getevent", "-lt"]
+            else:
+                # Target the physical USB device specifically (-d)
+                cmd = [self.adb_path, "-d", "shell", "getevent", "-lt"]
+                
             self.process = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+                cmd, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                text=True,
+                bufsize=1,
+                universal_newlines=True
             )
+
             self._connected = True
 
             for line in self.process.stdout:
@@ -120,8 +137,8 @@ class DJIRCPlus2(BaseRemoteController):
             else:
                 self.is_touching = True
 
-        if self.is_touching:
-            print(self.current_touch_x, self.current_touch_y)
+        # if self.is_touching:
+        #     print(self.current_touch_x, self.current_touch_y)
 
 
         #     # Map physical labels to your button numbers123

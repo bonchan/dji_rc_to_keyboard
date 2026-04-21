@@ -13,9 +13,9 @@ from src.keyboard.keyboard import KeyboardEmulator, KbAxis, KbButton
 
 
 
-def main(model_choice):
+def main(model_choice, connect_choice):
     logger = setup_logger(None, 'Main')
-    logger.info(f"--- DJI Universal Interface | Target: {model_choice} ---")
+    logger.info(f"--- DJI Universal Interface | Target: {model_choice} via {connect_choice}---")
 
     rc = None
     retry_limit = 15
@@ -29,7 +29,7 @@ def main(model_choice):
             elif model_choice == 'N1':
                 rc = DJIRCN1()
             elif model_choice == 'Plus2':
-                rc = DJIRCPlus2()
+                rc = DJIRCPlus2(deadzone_threshold_movement=0.3, deadzone_threshold_elevation=0.6, connect_mode=connect_choice, ip='192.168.1.55')
             
             # If we reach this line, constructor succeeded
             logger.info(f"Successfully connected to {model_choice}!")
@@ -188,8 +188,16 @@ if __name__ == "__main__":
         choices=['RC3', 'N1', 'M300', 'Plus2'],
         help='Remote controller model to use (default: RC3)'
     )
+
+    parser.add_argument(
+        '--connect', 
+        type=str, 
+        default='USB', 
+        choices=['USB', 'WIFI'],
+        help='Remote controller conection mode (default: USB)'
+    )
     
     args = parser.parse_args()
     
     # Pass the argument value into main
-    main(args.model)
+    main(args.model, args.connect)
