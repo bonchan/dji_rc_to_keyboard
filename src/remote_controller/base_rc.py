@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from src.utils.logger_setup import setup_logger
 from src.utils.input_logic import ButtonHandler
 
 class BaseRemoteController(ABC):
@@ -6,10 +7,11 @@ class BaseRemoteController(ABC):
     Standard interface for DJI Remote Controllers.
     All values are normalized to a float range of -1.0 to 1.0.
     """
-    def __init__(self, buttons, deadzone_threshold_movement, deadzone_threshold_elevation):
-
+    def __init__(self, buttons, deadzone_threshold_movement, deadzone_threshold_elevation, deadzone_threshold_tilt):
+        self.logger = setup_logger(self)
         self.deadzone_threshold_movement = deadzone_threshold_movement
         self.deadzone_threshold_elevation = deadzone_threshold_elevation
+        self.deadzone_threshold_tilt = deadzone_threshold_tilt
 
         # --- Analog Axes ---
         self.throttle = 0.0
@@ -28,6 +30,7 @@ class BaseRemoteController(ABC):
         self.button2 = ButtonHandler(buttons[1][0], print_update=buttons[1][1])
         self.button3 = ButtonHandler(buttons[2][0], print_update=buttons[2][1])
         self.button4 = ButtonHandler(buttons[3][0], print_update=buttons[3][1])
+        self.button5 = ButtonHandler(buttons[3][0], print_update=buttons[3][1])
 
     @abstractmethod
     def update(self) -> bool:
@@ -58,13 +61,16 @@ class BaseRemoteController(ABC):
     def dead_zone_elevation(self, value):
         return self._dead_zone(value, self.deadzone_threshold_elevation)
     
+    def dead_zone_tilt(self, value):
+        return self._dead_zone(value, self.deadzone_threshold_tilt)
+    
     def _dead_zone(self, value, threshold):
         return 0.0 if abs(value) < threshold else value
 
     def __str__(self):
         """Standardized string output for debugging across all models."""
         axes = f"T: {self.throttle: .2f} | Y: {self.yaw: .2f} | P: {self.pitch: .2f} | R: {self.roll: .2f} | Tilt: {self.tilt: .2f}"
-        btns = f"B1: {int(self.button1)} B2: {int(self.button2)} B3: {int(self.button3)} B4: {int(self.button4)}"
+        btns = f"B1: {self.button1} B2: {self.button2} B3: {self.button3} B4: {self.button4} B5: {self.button5}"
         swts = f"SW1: {self.sw1} SW2: {self.sw2}"
         return f"{axes} | {btns} | {swts} | {self.deadzone_threshold_movement} | {self.deadzone_threshold_elevation}"
     

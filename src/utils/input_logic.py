@@ -52,3 +52,7 @@ class ButtonHandler:
 
         if self.print_update:
             print(f'{self.button_name} - is_pressed: {self.is_pressed} | is_short_tap: {self.is_short_tap} | is_long_press: {self.is_long_press} | is_maintained_long_press: {self.is_maintained_long_press}')
+
+
+    def __str__(self):
+        return f'{self.button_name} - is_pressed: {self.is_pressed} | is_short_tap: {self.is_short_tap} | is_long_press: {self.is_long_press} | is_maintained_long_press: {self.is_maintained_long_press}'

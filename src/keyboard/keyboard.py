@@ -1,3 +1,4 @@
+from src.utils.logger_setup import setup_logger
 from pynput.keyboard import Controller, Key
 from enum import Enum
 from time import sleep
@@ -7,6 +8,7 @@ class KbButton(Enum):
     CAMERA_ZOOM   = '2'
     CAMERA_IR     = '3'
     PICTURE       = 'f'
+    # RECORD        = 'r'
     ANNOTATION    = 't'
     PAUSE         = Key.space
 
@@ -20,7 +22,8 @@ class KbAxis(Enum):
 
 class KeyboardEmulator:
     def __init__(self, emulate_hardware=True, print_events=True):
-        self.keyboard = Controller()
+        self.logger = setup_logger(self)
+        self.keyboard = Controller() 
         self.emulate_hardware = emulate_hardware
         self.print_events = print_events
         
@@ -39,11 +42,11 @@ class KeyboardEmulator:
             self.active_keys[neg_key] = False
 
     def _press(self, key):
-        if self.print_events: print(f'[PRESS]: {key}')
+        if self.print_events: self.logger.info(f'[PRESS]  : {key}')
         if self.emulate_hardware: self.keyboard.press(key)
 
     def _release(self, key):
-        if self.print_events: print(f'[RELEASE]: {key}')
+        if self.print_events: self.logger.info(f'[RELEASE]: {key}')
         if self.emulate_hardware: self.keyboard.release(key)
 
     def set_key_state(self, key, should_be_pressed):
@@ -89,7 +92,7 @@ class KeyboardEmulator:
         regardless of whether the script thinks they are pressed.
         """
         if self.print_events:
-            print("[EMERGENCY] Force releasing all mapped keys...")
+            self.logger.info("[EMERGENCY] Force releasing all mapped keys...")
             
         self.keyboard.tap(KbButton.PAUSE.value)
         for key in self.active_keys.keys():
@@ -102,6 +105,6 @@ class KeyboardEmulator:
                 pass
         
         if self.print_events:
-            print("[CLEANUP] Keyboard reset complete.")
+            self.logger.info("[CLEANUP] Keyboard reset complete.")
 
 
